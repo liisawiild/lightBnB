@@ -20,7 +20,7 @@ const getUserWithEmail = function (email) {
   .query(`SELECT * FROM users WHERE email =  $1`, [email])
   .then((result) => {
     console.log(result.rows[0]);
-    return result.rows;
+    return result.rows[0];
   })
   .catch((err) => {
     return err.message;
@@ -37,7 +37,7 @@ const getUserWithId = function (id) {
   .query(`SELECT * FROM users WHERE id =  $1`, [id])
   .then((result) => {
     console.log(result.rows[0]);
-    return result.rows;
+    return result.rows[0];
   })
   .catch((err) => {
     return err.message;
@@ -58,7 +58,7 @@ const addUser = function (user) {
   .query(`INSERT INTO users (name, email, password) VALUES ($1.name, $1.email, $1.password) RETURNING *;`, [user])
   .then((result) => {
     console.log(result.rows[0]);
-    return result.rows;
+    return result.rows[0];
   })
   .catch((err) => {
     return err.message;
