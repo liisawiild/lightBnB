@@ -1,5 +1,3 @@
-const properties = require("./json/properties.json");   //did I need to replace these?
-const users = require("./json/users.json");
 const { Pool } = require("pg");
 
 const pool = new Pool({
@@ -21,7 +19,7 @@ const getUserWithEmail = function (email) {
   return pool
   .query(`SELECT * FROM users WHERE email =  $1`, [email])
   .then((result) => {
-    console.log(result.rows);
+    console.log(result.rows[0]);
     return result.rows;
   })
   .catch((err) => {
@@ -38,7 +36,7 @@ const getUserWithId = function (id) {
   return pool
   .query(`SELECT * FROM users WHERE id =  $1`, [id])
   .then((result) => {
-    console.log(result.rows);
+    console.log(result.rows[0]);
     return result.rows;
   })
   .catch((err) => {
@@ -59,7 +57,7 @@ const addUser = function (user) {
   return pool
   .query(`INSERT INTO users (name, email, password) VALUES ($1.name, $1.email, $1.password) RETURNING *;`, [user])
   .then((result) => {
-    console.log(result.rows);
+    console.log(result.rows[0]);
     return result.rows;
   })
   .catch((err) => {
