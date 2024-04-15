@@ -72,7 +72,7 @@ const addUser = function (user) {
 const getAllReservations = function (guest_id, limit = 10) {
   return pool
   .query(`
-    SELECT properties.*, reservations.id AS reservation_id, title, start_date, cost_per_night, AVG(rating) AS average_rating
+    SELECT properties.*, reservations.id AS reservation_id, start_date, end_date, AVG(rating) AS average_rating
     FROM reservations
     JOIN properties ON property_id = properties.id 
     JOIN property_reviews ON property_reviews.property_id = properties.id
@@ -99,9 +99,46 @@ const getAllReservations = function (guest_id, limit = 10) {
  * @return {Promise<[{}]>}  A promise to the properties.
  */
 const getAllProperties = function (options, limit = 10) {
-  return pool
-  .query(`SELECT * FROM properties LIMIT $1`, [limit])
-  .then((result) => {
+  const queryParams = [];
+  const prefix = queryParams > 0 ? 'AND' : 'WHERE'
+
+  let queryString = `
+    SELECT properties.*, AVG(property_reviews.rating) AS average_rating
+    FROM properties
+    JOIN property_reviews ON properties.id = property_id`;
+
+  if (options.city) {
+    queryParams.push(`%${options.city}%`);
+    queryString += `WHERE city LIKE $${queryParams.length}`;
+  }
+
+  if (options.owner_id) {
+    queryParams.push(`%${options.owner_id}%`);
+    queryString += `${prefix} owner_id = $${queryParams.length}`;
+  }
+
+  if (options.minimum_price_per_night && options.maximum_price_per_night) {
+    queryParams.push(`%${options.minimum_price_per_night}%`);
+    queryParams.push(`%${options.maximum_price_per_night}%`);
+    queryString += `${prefix} cost_per_night >= $${queryParams.length - 1} AND cost_per_night <= $${queryParams.length}`;
+  }
+
+  if (options.minimum_rating) {
+    queryParams.push(`%${options.minimum_rating}%`);
+    queryString += `${prefix} AVG(property_reviews.rating) >= $${queryParams.length}`;
+  }
+
+  queryParams.push(limit);
+  queryString += `
+  GROUP BY properties.id
+  LIMIT $${queryParams.length}
+  ;
+  `;
+
+  console.log("string--", queryString, "params---", queryParams);
+
+  return pool.query(queryString, queryParams).then((result) => {
+    console.log("results------", result);
     return result.rows;
   })
   .catch((err) => {
