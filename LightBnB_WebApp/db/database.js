@@ -50,14 +50,10 @@ const getUserWithId = function (id) {
  * @return {Promise<{}>} A promise to the user.
  */
 const addUser = function (user) {
-  // const userId = Object.keys(users).length + 1;
-  // user.id = userId;
-  // users[userId] = user;
-  // return Promise.resolve(user);
   return pool
   .query(`INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING *;`, [user.name, user.email, user.password])
   .then((result) => {
-    console.log(result.rows[0]);
+    // console.log(result.rows[0]);
     return result.rows[0];
   })
   .catch((err) => {
@@ -74,7 +70,24 @@ const addUser = function (user) {
  * @return {Promise<[{}]>} A promise to the reservations.
  */
 const getAllReservations = function (guest_id, limit = 10) {
-  return getAllProperties(null, 2);
+  return pool
+  .query(`
+    SELECT properties.*, reservations.id AS reservation_id, title, start_date, cost_per_night, AVG(rating) AS average_rating
+    FROM reservations
+    JOIN properties ON property_id = properties.id 
+    JOIN property_reviews ON property_reviews.property_id = properties.id
+    WHERE reservations.guest_id = $1
+    GROUP BY reservations.id, properties.id
+    ORDER BY start_date ASC
+    LIMIT $2
+    ;
+    `, [guest_id, limit])
+    .then((result) => {
+      return result.rows;
+    })
+    .catch((err) => {
+      return err.message;
+    })
 };
 
 /// Properties
@@ -86,12 +99,6 @@ const getAllReservations = function (guest_id, limit = 10) {
  * @return {Promise<[{}]>}  A promise to the properties.
  */
 const getAllProperties = function (options, limit = 10) {
-  // const limitedProperties = {};
-  // for (let i = 1; i <= limit; i++) {
-  //   limitedProperties[i] = properties[i];
-  // }
-  // return Promise.resolve(limitedProperties);
-
   return pool
   .query(`SELECT * FROM properties LIMIT $1`, [limit])
   .then((result) => {
