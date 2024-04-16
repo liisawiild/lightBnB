@@ -16,8 +16,12 @@ const pool = new Pool({
  * @return {Promise<{}>} A promise to the user.
  */
 const getUserWithEmail = function (email) {
+
+  const queryString = `SELECT * FROM users WHERE email =  $1;`;
+  const queryParams = [email];
+
   return pool
-    .query(`SELECT * FROM users WHERE email =  $1`, [email])
+    .query(queryString, queryParams)
     .then((result) => {
       console.log(result.rows[0]);
       return result.rows[0];
@@ -33,8 +37,12 @@ const getUserWithEmail = function (email) {
  * @return {Promise<{}>} A promise to the user.
  */
 const getUserWithId = function (id) {
+
+  const queryString = `SELECT * FROM users WHERE id =  $1;`;
+  const queryParams = [id];
+
   return pool
-    .query(`SELECT * FROM users WHERE id =  $1`, [id])
+    .query(queryString, queryParams)
     .then((result) => {
       console.log(result.rows[0]);
       return result.rows[0];
@@ -50,10 +58,15 @@ const getUserWithId = function (id) {
  * @return {Promise<{}>} A promise to the user.
  */
 const addUser = function (user) {
+  const { name, email, password } = user;
+
+  const queryString = `INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING *;`;
+  const queryParams = [name, email, password];
+
   return pool
-    .query(`INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING *;`, [user.name, user.email, user.password])
+    .query(queryString, queryParams)
     .then((result) => {
-      // console.log(result.rows[0]);
+      console.log(result.rows[0]);
       return result.rows[0];
     })
     .catch((err) => {
@@ -70,8 +83,8 @@ const addUser = function (user) {
  * @return {Promise<[{}]>} A promise to the reservations.
  */
 const getAllReservations = function (guest_id, limit = 10) {
-  return pool
-    .query(`
+
+  const queryString = `
     SELECT properties.*, reservations.id AS reservation_id, start_date, end_date, AVG(rating) AS average_rating
     FROM reservations
     JOIN properties ON property_id = properties.id 
@@ -81,8 +94,14 @@ const getAllReservations = function (guest_id, limit = 10) {
     ORDER BY start_date ASC
     LIMIT $2
     ;
-    `, [guest_id, limit])
+    `;
+
+  const queryParams = [guest_id, limit];
+
+  return pool
+    .query(queryString, queryParams)
     .then((result) => {
+      console.log(result.rows);
       return result.rows;
     })
     .catch((err) => {
