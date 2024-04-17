@@ -15,7 +15,7 @@ const pool = new Pool({
  * @param {String} email The email of the user.
  * @return {Promise<{}>} A promise to the user.
  */
-const getUserWithEmail = function (email) {
+const getUserWithEmail = function(email) {
   const queryString = `SELECT * FROM users WHERE email = $1;`;
   const queryParams = [email];
 
@@ -35,7 +35,7 @@ const getUserWithEmail = function (email) {
  * @param {string} id The id of the user.
  * @return {Promise<{}>} A promise to the user.
  */
-const getUserWithId = function (id) {
+const getUserWithId = function(id) {
   const queryString = `SELECT * FROM users WHERE id = $1;`;
   const queryParams = [id];
 
@@ -55,7 +55,7 @@ const getUserWithId = function (id) {
  * @param {{name: string, password: string, email: string}} user
  * @return {Promise<{}>} A promise to the user.
  */
-const addUser = function (user) {
+const addUser = function(user) {
   const { name, email, password } = user;
 
   const queryString = `INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING *;`;
@@ -80,7 +80,7 @@ const addUser = function (user) {
  * @param {string} guest_id The id of the user.
  * @return {Promise<[{}]>} A promise to the reservations.
  */
-const getAllReservations = function (guest_id, limit = 10) {
+const getAllReservations = function(guest_id, limit = 10) {
   const queryString = `
     SELECT properties.*, reservations.id AS reservation_id, start_date, end_date, AVG(rating) AS average_rating
     FROM reservations
@@ -102,7 +102,7 @@ const getAllReservations = function (guest_id, limit = 10) {
     })
     .catch((err) => {
       return err.message;
-    })
+    });
 };
 
 /// Properties
@@ -113,9 +113,9 @@ const getAllReservations = function (guest_id, limit = 10) {
  * @param {*} limit The number of results to return.
  * @return {Promise<[{}]>}  A promise to the properties.
  */
-const getAllProperties = function (options, limit = 10) {
+const getAllProperties = function(options, limit = 10) {
   const { city, owner_id, minimum_price_per_night, maximum_price_per_night, minimum_rating } = options;
-  
+
   const queryParams = [];
   // Begin the queryString but leave it open-ended (notice let) based on the incoming arguments from the options object (search form fields)
   let queryString = `
@@ -127,14 +127,14 @@ const getAllProperties = function (options, limit = 10) {
   // Search Filter: if city is input it will add 'WHERE city LIKE' clauses to the queryString to only return properties in that city
   if (city) {
     queryParams.push(`%${city}%`);
-    queryString += queryParams.length === 1 ? ' WHERE ' : ' AND '
+    queryString += queryParams.length === 1 ? ' WHERE ' : ' AND ';
     queryString += `city LIKE $${queryParams.length}`;
   }
 
   // For My Listings: if a listing was created the owner_id will be used to populate their properties
   if (owner_id) {
     queryParams.push(Number(owner_id));
-    queryString += queryParams.length === 1 ? ' WHERE ' : ' AND '
+    queryString += queryParams.length === 1 ? ' WHERE ' : ' AND ';
     queryString += `owner_id = $${queryParams.length}`;
   }
 
@@ -142,28 +142,28 @@ const getAllProperties = function (options, limit = 10) {
   if (minimum_price_per_night && maximum_price_per_night) {
     queryParams.push(Number(minimum_price_per_night * 100));
     queryParams.push(Number(maximum_price_per_night * 100));
-    queryString += queryParams.length === 2 ? ' WHERE ' : ' AND '
+    queryString += queryParams.length === 2 ? ' WHERE ' : ' AND ';
     queryString += `cost_per_night >= $${queryParams.length - 1} AND cost_per_night <= $${queryParams.length}`;
   }
 
   // Search Filter: if a minimum cost is input, a clause for a cost_per_night will be added to the queryString to only pull properties that cost more than the min value
   if (minimum_price_per_night) {
     queryParams.push(Number(minimum_price_per_night * 100));
-    queryString += queryParams.length === 1 ? ' WHERE ' : ' AND '
+    queryString += queryParams.length === 1 ? ' WHERE ' : ' AND ';
     queryString += `cost_per_night >= $${queryParams.length}`;
   }
 
   // Search Filter: if a maximum cost is input, a clause for a cost_per_night will be added to the queryString to only pull properties that cost less than the max value
   if (maximum_price_per_night) {
     queryParams.push(Number(maximum_price_per_night * 100));
-    queryString += queryParams.length === 1 ? ' WHERE ' : ' AND '
+    queryString += queryParams.length === 1 ? ' WHERE ' : ' AND ';
     queryString += `cost_per_night <= $${queryParams.length}`;
   }
 
   // GROUP BY clause must come after any WHERE clause and therefore must wait for the above statements to run before being added to the queryString
   queryString += ` GROUP BY properties.id`;
 
-  // HAVING must come after GROUP BY 
+  // HAVING must come after GROUP BY
   if (minimum_rating) {
     queryParams.push(Number(minimum_rating));
     queryString += ` HAVING AVG(property_reviews.rating) >= $${queryParams.length}`;
@@ -192,7 +192,7 @@ const getAllProperties = function (options, limit = 10) {
  * @param {{}} property An object containing all of the property details.
  * @return {Promise<{}>} A promise to the property.
  */
-const addProperty = function (property) {
+const addProperty = function(property) {
   const {
     owner_id,
     title,
@@ -211,35 +211,35 @@ const addProperty = function (property) {
   } = property;
 
   const queryParams = [
-      owner_id,
-      title,
-      description,
-      thumbnail_photo_url,
-      cover_photo_url,
-      cost_per_night,
-      street,
-      city,
-      province,
-      post_code,
-      country,
-      parking_spaces,
-      number_of_bathrooms,
-      number_of_bedrooms
+    owner_id,
+    title,
+    description,
+    thumbnail_photo_url,
+    cover_photo_url,
+    cost_per_night,
+    street,
+    city,
+    province,
+    post_code,
+    country,
+    parking_spaces,
+    number_of_bathrooms,
+    number_of_bedrooms
   ];
 
   const queryString = `
   INSERT INTO properties (owner_id, title, description, thumbnail_photo_url, cover_photo_url, cost_per_night, street, city, province, post_code, country, parking_spaces, number_of_bathrooms, number_of_bedrooms)
   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11 , $12, $13, $14)
   RETURNING *;
-  `
+  `;
 
   return pool.query(queryString, queryParams)
     .then((result) => {
       return result.rows;
     })
     .catch((err) => {
-      return err.message
-    })
+      return err.message;
+    });
 };
 
 module.exports = {
