@@ -16,8 +16,7 @@ const pool = new Pool({
  * @return {Promise<{}>} A promise to the user.
  */
 const getUserWithEmail = function (email) {
-
-  const queryString = `SELECT * FROM users WHERE email =  $1;`;
+  const queryString = `SELECT * FROM users WHERE email = $1;`;
   const queryParams = [email];
 
   return pool
@@ -37,8 +36,7 @@ const getUserWithEmail = function (email) {
  * @return {Promise<{}>} A promise to the user.
  */
 const getUserWithId = function (id) {
-
-  const queryString = `SELECT * FROM users WHERE id =  $1;`;
+  const queryString = `SELECT * FROM users WHERE id = $1;`;
   const queryParams = [id];
 
   return pool
@@ -83,7 +81,6 @@ const addUser = function (user) {
  * @return {Promise<[{}]>} A promise to the reservations.
  */
 const getAllReservations = function (guest_id, limit = 10) {
-
   const queryString = `
     SELECT properties.*, reservations.id AS reservation_id, start_date, end_date, AVG(rating) AS average_rating
     FROM reservations
@@ -95,7 +92,6 @@ const getAllReservations = function (guest_id, limit = 10) {
     LIMIT $2
     ;
     `;
-
   const queryParams = [guest_id, limit];
 
   return pool
@@ -118,27 +114,31 @@ const getAllReservations = function (guest_id, limit = 10) {
  * @return {Promise<[{}]>}  A promise to the properties.
  */
 const getAllProperties = function (options, limit = 10) {
-  const { city, owner_id, minimum_price_per_night, maximum_price_per_night, minimum_rating } = options
+  const { city, owner_id, minimum_price_per_night, maximum_price_per_night, minimum_rating } = options;
+  
   const queryParams = [];
-
+  // Begin the queryString but leave it open-ended (notice let) based on the incoming arguments from the options object (search form fields)
   let queryString = `
     SELECT properties.*, AVG(property_reviews.rating) AS average_rating
     FROM properties
     JOIN property_reviews ON properties.id = property_id
     `;
 
+  // Search Filter: if city is input it will add 'WHERE city LIKE' clauses to the queryString to only return properties in that city
   if (city) {
     queryParams.push(`%${city}%`);
     queryString += queryParams.length === 1 ? ' WHERE ' : ' AND '
     queryString += `city LIKE $${queryParams.length}`;
   }
 
+  // For My Listings: if a listing was created the owner_id will be used to populate their properties
   if (owner_id) {
-    queryParams.push(`${owner_id}`);
+    queryParams.push(Number(owner_id));
     queryString += queryParams.length === 1 ? ' WHERE ' : ' AND '
     queryString += `owner_id = $${queryParams.length}`;
   }
 
+  // Search Filter: if minimum and maximum cost is input, a clause for a cost_per_night range with those values will be added to the queryString
   if (minimum_price_per_night && maximum_price_per_night) {
     queryParams.push(Number(minimum_price_per_night * 100));
     queryParams.push(Number(maximum_price_per_night * 100));
@@ -146,25 +146,30 @@ const getAllProperties = function (options, limit = 10) {
     queryString += `cost_per_night >= $${queryParams.length - 1} AND cost_per_night <= $${queryParams.length}`;
   }
 
+  // Search Filter: if a minimum cost is input, a clause for a cost_per_night will be added to the queryString to only pull properties that cost more than the min value
   if (minimum_price_per_night) {
     queryParams.push(Number(minimum_price_per_night * 100));
     queryString += queryParams.length === 1 ? ' WHERE ' : ' AND '
     queryString += `cost_per_night >= $${queryParams.length}`;
   }
 
+  // Search Filter: if a maximum cost is input, a clause for a cost_per_night will be added to the queryString to only pull properties that cost less than the max value
   if (maximum_price_per_night) {
     queryParams.push(Number(maximum_price_per_night * 100));
     queryString += queryParams.length === 1 ? ' WHERE ' : ' AND '
     queryString += `cost_per_night <= $${queryParams.length}`;
   }
 
-  queryString += ` GROUP BY properties.id`
+  // GROUP BY clause must come after any WHERE clause and therefore must wait for the above statements to run before being added to the queryString
+  queryString += ` GROUP BY properties.id`;
 
+  // HAVING must come after GROUP BY 
   if (minimum_rating) {
     queryParams.push(Number(minimum_rating));
     queryString += ` HAVING AVG(property_reviews.rating) >= $${queryParams.length}`;
   }
 
+  // ORDER BY and LIMIT are added last and limit is pulled as a default value from line 8 of the routes/apiRoutes.js
   queryParams.push(limit);
   queryString += `
   ORDER BY cost_per_night
@@ -172,6 +177,7 @@ const getAllProperties = function (options, limit = 10) {
   ;
   `;
 
+  // Runs the query with the newly made queryString and queryParams (based on search filter) which will return an array of property objects
   return pool.query(queryString, queryParams)
     .then((result) => {
       return result.rows;
@@ -204,7 +210,22 @@ const addProperty = function (property) {
     number_of_bedrooms
   } = property;
 
-  const queryParams = [owner_id, title, description, thumbnail_photo_url, cover_photo_url, cost_per_night, street, city, province, post_code, country, parking_spaces, number_of_bathrooms, number_of_bedrooms];
+  const queryParams = [
+      owner_id,
+      title,
+      description,
+      thumbnail_photo_url,
+      cover_photo_url,
+      cost_per_night,
+      street,
+      city,
+      province,
+      post_code,
+      country,
+      parking_spaces,
+      number_of_bathrooms,
+      number_of_bedrooms
+  ];
 
   const queryString = `
   INSERT INTO properties (owner_id, title, description, thumbnail_photo_url, cover_photo_url, cost_per_night, street, city, province, post_code, country, parking_spaces, number_of_bathrooms, number_of_bedrooms)
