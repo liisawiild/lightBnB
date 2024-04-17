@@ -1,5 +1,3 @@
-# LightBnB
-
 ## Project Structure
 
 ```
