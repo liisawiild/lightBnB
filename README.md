@@ -69,17 +69,22 @@ CREATE DATABASE lightbnb;
 
 
 ## Run Application
-1. a) To start the server, run:
+1. Ensure you are in the LightBnB_WebApp directory
+```
+cd LightBnB_WebApp
+```
+
+2. a) To start the server, run:
 ```
 npm run start
 ```
 
-1. b) To run the server with automatic restart on file changes (using nodemon), run:
+2. b) To run the server with automatic restart on file changes (using nodemon), run:
 ```
 npm run local
 ```
 
-2. Open your web browser and navigate to [http://localhost:3000](http://localhost:3000).
+3. Open your web browser and navigate to [http://localhost:3000](http://localhost:3000).
 
 
 ## ERD & Project Structure
